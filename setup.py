@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="table-tests",
-    version="0.0.1",
+    version="0.0.2",
     author="Egor Urvanov",
     author_email="hedgehogues@bk.ru",
     description="Simple engine for your tests. No code, no noodles",
