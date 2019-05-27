@@ -1,7 +1,7 @@
 import logging
 
 from example.c import plus
-from utils import BaseTestClass, SubTest
+from tabeltests.utils import BaseTestClass, SubTest
 
 
 class MyTestAcceptFunc(BaseTestClass):
