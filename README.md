@@ -1,6 +1,8 @@
 # Table test
 
-This package wrote to use table tests in python. The best practice and very useful practice is test with simple-style structure. You don't write any code: for-loop, conditions, exceptions and other difficult constructions in tests. You describe your test as some cases:
+This package wrote to use table tests in python. The best practice and very useful practice is test with simple-style 
+structure. You don't write any code: for-loop, conditions, exceptions and other difficult constructions in tests. 
+You describe your test as some cases:
 
 * Name
 * Description
@@ -9,12 +11,12 @@ This package wrote to use table tests in python. The best practice and very usef
 * After and before middleware
 
 Such kind of tests intend of standartization and getting rid of verbosity. You can find some examples into 
-[example](https://github.com/hedgehogues/table-tests/tree/example). More sophisticated examples you can find 
+[tests](https://github.com/hedgehogues/table-tests/tree/tests). More sophisticated examples you can find 
 [here](https://github.com/Hedgehogues/youtube-crawler/tree/master/tests)
 
 # Installation
 
-    git clone 
+    git clone https://github.com/Hedgehogues/table-tests
     pip install -r requirements
 
 # Our recommendations
