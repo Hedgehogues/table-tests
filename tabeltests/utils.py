@@ -10,14 +10,17 @@ class BaseTestClass(unittest.TestCase):
         super(BaseTestClass, self).__init__(*args, **kwargs)
         self.tests_parse = []
 
-    def __middleware(self, mws):
+    @staticmethod
+    def __middleware(mws):
         for mw in mws:
             mw()
 
-    def __valid(self, obj, kwargs, func, want, ignore, answ_processors):
+    def __valid(self, obj, kwargs, func, want, ignore, answ_processors, obj_processors):
         res = func(obj, kwargs)
         for p in answ_processors:
             res = p(res)
+        for p in obj_processors:
+            p(obj)
         if not ignore:
             diff = deepdiff.DeepDiff(want, res)
             self.assertEqual(0, len(diff), msg="want=%s, got=%s" % (want, res))
@@ -47,11 +50,12 @@ class BaseTestClass(unittest.TestCase):
         exception = test.exception
         ignore = test.ignore_want
         answ_processor = test.answer_processors
+        object_processor = test.object_processors
         msg = test.create_msg()
         with self.subTest(msg=msg):
             self.__middleware(test.middlewares_before)
             if exception is None:
-                self.__valid(obj, kwargs, func, want, ignore, answ_processor)
+                self.__valid(obj, kwargs, func, want, ignore, answ_processor, object_processor)
             else:
                 self.__exception(obj, kwargs, exception, func)
             self.__middleware(test.middlewares_after)
@@ -72,13 +76,15 @@ class SubTest:
         test of constructor for instance.
     :param exception (Exception): exception expected from function or None (if exception is not raises).
         If exception is state, then field lwant is ignore
-    :param answers_processor (list): this function for process answers.
-        For tests, suppose your function returns list of elements without range. Then you can sort your answer
+    :param answers_processor (list): this function needs for process answers.
+        For instance, suppose your function returns list of elements without range. Then you can sort your answer
         and check them after that
+    :param object_processor (list): this function needs for process of object.
+        For instance, suppose your function save the state or has mock object, which save data. Then you needs
     :param middlewares_before (list): list of middlewares functions which execute before start functionall unittests methods. Response from middleware not processed.
-        For tests, you can add function which open file or create additional objects
+        For instance, you can add function which open file or create additional objects
     :param middlewares_before (list): list of middlewares functions which execute after finished function.
-        For tests, you can add function which close file or remove additional objects
+        For instance, you can add function which close file or remove additional objects
     :param fail (bool): is true, then test will be fail
 
     self.configuration = self.fill('configuration', None, kwargs)
@@ -99,7 +105,10 @@ class SubTest:
         self.ignore_want = self.fill('ignore_want', False, kwargs)
         # Wanted exception or None
         self.exception = self.fill('exception', None, kwargs)
+        # Answer's process of target function with a callback function.
+        # After that answer pass for check
         self.answer_processors = self.fill('answer_processors', [], kwargs)
+        self.object_processors = self.fill('object_processors', [], kwargs)
         self.middlewares_before = self.fill('middlewares_before', [], kwargs)
         self.middlewares_after = self.fill('middlewares_after', [], kwargs)
         self.configuration = self.fill('configuration', None, kwargs)
