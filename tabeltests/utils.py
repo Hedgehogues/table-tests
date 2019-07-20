@@ -111,7 +111,8 @@ class BaseTestClass(unittest.TestCase):
         :param callback:
         :return:
         """
-        self.assertTrue(callback())
+        x = callback()
+        self.assertTrue(x)
 
     def check_exist_file(self, filename):
         """
