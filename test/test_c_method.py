@@ -1,6 +1,6 @@
 import logging
 
-from tests.c import MyClass
+from internal.c import MyClass
 from tabeltests.utils import BaseTestClass, SubTest
 
 

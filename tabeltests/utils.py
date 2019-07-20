@@ -1,8 +1,11 @@
 import json
+import logging
 import os
+import time
 
 import deepdiff
 import unittest
+import numpy as np
 
 
 class BaseTestClass(unittest.TestCase):
@@ -10,55 +13,142 @@ class BaseTestClass(unittest.TestCase):
         super(BaseTestClass, self).__init__(*args, **kwargs)
         self.tests_parse = []
 
+        # create formatter for benchmark
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.ch = logging.StreamHandler()
+        self.ch.setFormatter(formatter)
+
     @staticmethod
     def __middleware(mws):
         for mw in mws:
             mw()
 
-    def __valid(self, obj, kwargs, func, want, ignore, answ_processors, obj_processors):
-        res = func(obj, kwargs)
-        for p in answ_processors:
-            res = p(res)
-        for p in obj_processors:
-            p(obj)
-        if not ignore:
-            diff = deepdiff.DeepDiff(want, res)
-            self.assertEqual(0, len(diff), msg="want=%s, got=%s" % (want, res))
+    def __time_benchmark(self, func, obj, test, logger):
+        s = []
+        for i in range(test.num_time_benchmark):
+            t = time.process_time()
+            func(obj, test.args)
+            s.append(time.process_time() - t)
+        logger.addHandler(self.ch)
+        m = test.mean_time_benchmark
+        v = test.var_time_benchmark
+        f = f"mean time: %.{m}f. time variance: %.{v}f"
+        logger.info(f % (float(np.mean(s)), float(np.sqrt(np.var(s)))))
 
-    def __exception(self, obj, kwargs, exception, func):
-        self.assertRaises(exception, func, obj, kwargs)
+    @staticmethod
+    def __memory_benchmark(logger):
+        logger.warning("not implemented memory benchmark")
+
+    def __valid(self, test, func):
+        res = func(test.object, test.args)
+        logger = logging.getLogger('bench for %s' % test.name)
+        logger.setLevel(logging.INFO)
+        if test.time_benchmark:
+            test.middlewares_after.append(lambda: self.__time_benchmark(func, test.object, test, logger))
+        if test.memory_benchmark:
+            test.middlewares_after.append(lambda: self.__memory_benchmark(logger))
+
+        for p in test.answer_processors:
+            res = p(res)
+        for p in test.object_processors:
+            p(test.object)
+        self.__middleware(test.middlewares_after)
+        if not test.ignore_want:
+            diff = deepdiff.DeepDiff(test.want, res)
+            self.assertEqual(0, len(diff), msg="want=%s, got=%s" % (test.want, res))
+
+    def __exception(self, test, func):
+        try:
+            func(test.object, test.args)
+            self.__middleware(test.middlewares_after)
+        except Exception as e:
+            self.__middleware(test.middlewares_after)
+            self.assertTrue(type(e) == test.exception)
+
+    def assert_false(self, callback):
+        """
+        assert_false needs for check false callback
+
+        for example, if you want to make integration tests, you need check result of middleware and clear environment:
+
+        SubTest(
+            name="test",
+            middleware_after=[
+                generate_data(),
+            ],
+            object=X,
+            ignore_want=True,
+            middlewares_after=[
+                self.assert_false(generate_data),  # Here, we use this function
+                clear_data(),
+            ],
+        ),
+
+        :param callback:
+        :return:
+        """
+        self.assertFalse(callback())
+
+    def assert_true(self, callback):
+        """
+        assert_false needs for check true callback
+
+        for example, if you want to make integration tests, you need check result of middleware:
+
+        SubTest(
+            name="test",
+            middleware_after=[
+                generate_data(),
+            ],
+            object=X,
+            ignore_want=True,
+            middlewares_after=[
+                self.assert_true(generate_data),  # Here, we use this function
+                clear_data(),
+            ],
+        ),
+
+        :param callback:
+        :return:
+        """
+        x = callback()
+        self.assertTrue(x)
 
     def check_exist_file(self, filename):
+        """
+        :param filename: path to file (str)
+        :return:
+        """
         self.assertTrue(os.path.exists(filename))
 
     @staticmethod
     def remove_filename(filename):
+        """
+        :param filename: path to file (str)
+        :return: nothing
+        """
         if os.path.exists(filename):
             os.remove(filename)
 
     @staticmethod
     def create_filename(filename):
+        """
+        :param filename: path to file (str)
+        :return: nothing
+        """
         if not os.path.exists(filename):
             open(filename, 'w').close()
 
     def apply_test(self, test, func):
         if test.fail:
             self.fail()
-        kwargs = test.args
-        want = test.want
-        obj = test.object
-        exception = test.exception
-        ignore = test.ignore_want
-        answ_processor = test.answer_processors
-        object_processor = test.object_processors
         msg = test.create_msg()
         with self.subTest(msg=msg):
             self.__middleware(test.middlewares_before)
-            if exception is None:
-                self.__valid(obj, kwargs, func, want, ignore, answ_processor, object_processor)
-            else:
-                self.__exception(obj, kwargs, exception, func)
-            self.__middleware(test.middlewares_after)
+            if test.exception is None:
+                self.__valid(test, func)
+                return
+            self.__exception(test, func)
 
 
 class SubTest:
@@ -86,6 +176,14 @@ class SubTest:
     :param middlewares_before (list): list of middlewares functions which execute after finished function.
         For instance, you can add function which close file or remove additional objects
     :param fail (bool): is true, then test will be fail
+    :param time_benchmark (bool): does need to use time benchmark
+    :param num_time_benchmark (int): number of program launches for time benchmark estimation (default=5)
+    :param mean_eps_time_benchmark (int): a number of symbols after comma for mean time (default=15)
+    :param var_eps_time_benchmark (int): a number of symbols after comma for time variance (default=15)
+    :param memory_benchmark (bool): does need to use memory benchmark
+    :param num_memory_benchmark (int): number of program launches for time benchmark estimation (default=5)
+    :param mean_eps_memory_benchmark (int): a number of symbols after comma for mean time (default=15)
+    :param var_eps_memory_benchmark (int): a number of symbols after comma for time variance (default=15)
 
     self.configuration = self.fill('configuration', None, kwargs)
     """
@@ -113,6 +211,14 @@ class SubTest:
         self.middlewares_after = self.fill('middlewares_after', [], kwargs)
         self.configuration = self.fill('configuration', None, kwargs)
         self.fail = self.fill('fail', False, kwargs)
+        self.time_benchmark = self.fill('time_benchmark', False, kwargs)
+        self.memory_benchmark = self.fill('memory_benchmark', False, kwargs)
+        self.mean_time_benchmark = self.fill('mean_time_benchmark', 15, kwargs)
+        self.mean_memory_benchmark = self.fill('mean_memory_benchmark', 15, kwargs)
+        self.var_time_benchmark = self.fill('var_time_benchmark', 15, kwargs)
+        self.var_memory_benchmark = self.fill('var_memory_benchmark', 15, kwargs)
+        self.num_time_benchmark = self.fill('num_time_benchmark', 5, kwargs)
+        self.num_memory_benchmark = self.fill('num_memory_benchmark', 5, kwargs)
 
     @staticmethod
     def fill(k, r, kwargs):
