@@ -57,9 +57,6 @@ class BaseTestClass(unittest.TestCase):
             diff = deepdiff.DeepDiff(test.want, res)
             self.assertEqual(0, len(diff), msg="want=%s, got=%s" % (test.want, res))
 
-    def check_exist_file(self, filename):
-        self.assertTrue(os.path.exists(filename))
-
     def __exception(self, test, func):
         try:
             func(test.object, test.args)
@@ -68,13 +65,76 @@ class BaseTestClass(unittest.TestCase):
             self.__middleware(test.middlewares_after)
             self.assertTrue(type(e) == test.exception)
 
+    def assert_false(self, callback):
+        """
+        assert_false needs for check false callback
+
+        for example, if you want to make integration tests, you need check result of middleware and clear environment:
+
+        SubTest(
+            name="test",
+            middleware_after=[
+                generate_data(),
+            ],
+            object=X,
+            ignore_want=True,
+            middlewares_after=[
+                self.assert_false(generate_data),  # Here, we use this function
+                clear_data(),
+            ],
+        ),
+
+        :param callback:
+        :return:
+        """
+        self.assertFalse(callback())
+
+    def assert_true(self, callback):
+        """
+        assert_false needs for check true callback
+
+        for example, if you want to make integration tests, you need check result of middleware:
+
+        SubTest(
+            name="test",
+            middleware_after=[
+                generate_data(),
+            ],
+            object=X,
+            ignore_want=True,
+            middlewares_after=[
+                self.assert_true(generate_data),  # Here, we use this function
+                clear_data(),
+            ],
+        ),
+
+        :param callback:
+        :return:
+        """
+        self.assertTrue(callback())
+
+    def check_exist_file(self, filename):
+        """
+        :param filename: path to file (str)
+        :return:
+        """
+        self.assertTrue(os.path.exists(filename))
+
     @staticmethod
     def remove_filename(filename):
+        """
+        :param filename: path to file (str)
+        :return: nothing
+        """
         if os.path.exists(filename):
             os.remove(filename)
 
     @staticmethod
     def create_filename(filename):
+        """
+        :param filename: path to file (str)
+        :return: nothing
+        """
         if not os.path.exists(filename):
             open(filename, 'w').close()
 
