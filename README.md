@@ -48,5 +48,5 @@ from the base class and build your own class:
 * BaseTestClass - this is simple engine for process your tests.
 * SubTest - this is instance of your test
  
-Your welcome! Enjoy it (=. 
+You're welcome! Enjoy it (=. 
  
