@@ -44,7 +44,7 @@ class MyTestException(BaseTestClass):
                     lambda obj: self.__check(obj, 1)
                 ],
                 ignore_want=True,
-                exception=Exception,
+                exception=TypeError,
             ),
         ]
 

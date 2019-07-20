@@ -39,28 +39,34 @@ class BaseTestClass(unittest.TestCase):
     def __memory_benchmark(logger):
         logger.warning("not implemented memory benchmark")
 
-    def __valid(self, obj, test, func):
-        res = func(obj, test.args)
+    def __valid(self, test, func):
+        res = func(test.object, test.args)
         logger = logging.getLogger('bench for %s' % test.name)
         logger.setLevel(logging.INFO)
         if test.time_benchmark:
-            test.middlewares_after.append(lambda: self.__time_benchmark(func, obj, test, logger))
+            test.middlewares_after.append(lambda: self.__time_benchmark(func, test.object, test, logger))
         if test.memory_benchmark:
             test.middlewares_after.append(lambda: self.__memory_benchmark(logger))
 
         for p in test.answer_processors:
             res = p(res)
         for p in test.object_processors:
-            p(obj)
+            p(test.object)
+        self.__middleware(test.middlewares_after)
         if not test.ignore_want:
             diff = deepdiff.DeepDiff(test.want, res)
             self.assertEqual(0, len(diff), msg="want=%s, got=%s" % (test.want, res))
 
-    def __exception(self, obj, kwargs, exception, func):
-        self.assertRaises(exception, func, obj, kwargs)
-
     def check_exist_file(self, filename):
         self.assertTrue(os.path.exists(filename))
+
+    def __exception(self, test, func):
+        try:
+            func(test.object, test.args)
+            self.__middleware(test.middlewares_after)
+        except Exception as e:
+            self.__middleware(test.middlewares_after)
+            self.assertTrue(type(e) == test.exception)
 
     @staticmethod
     def remove_filename(filename):
@@ -75,17 +81,13 @@ class BaseTestClass(unittest.TestCase):
     def apply_test(self, test, func):
         if test.fail:
             self.fail()
-        kwargs = test.args
-        obj = test.object
-        exception = test.exception
         msg = test.create_msg()
         with self.subTest(msg=msg):
             self.__middleware(test.middlewares_before)
-            if exception is None:
-                self.__valid(obj, test, func)
-            else:
-                self.__exception(obj, kwargs, exception, func)
-            self.__middleware(test.middlewares_after)
+            if test.exception is None:
+                self.__valid(test, func)
+                return
+            self.__exception(test, func)
 
 
 class SubTest:
