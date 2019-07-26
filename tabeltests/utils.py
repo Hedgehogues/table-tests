@@ -64,6 +64,8 @@ class BaseTestClass(unittest.TestCase):
         except Exception as e:
             self.__middleware(test.middlewares_after)
             self.assertTrue(type(e) == test.exception)
+            return
+        self.assertTrue(False)
 
     def assert_false(self, callback):
         """
