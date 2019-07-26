@@ -14,7 +14,7 @@ install_reqs = parse_requirements('./requirements.txt')
     
 setuptools.setup(
     name="table-test",
-    version="0.4.0",
+    version="0.4.1",
     author="Egor Urvanov",
     author_email="hedgehogues@bk.ru",
     description="Simple engine for your test. No code, no noodles",
