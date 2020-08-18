@@ -14,7 +14,7 @@ install_reqs = parse_requirements('./requirements.txt')
     
 setuptools.setup(
     name="table-test",
-    version="0.4.0",
+    version="0.4.1",
     author="Egor Urvanov",
     author_email="hedgehogues@bk.ru",
     description="Simple engine for your test. No code, no noodles",
@@ -23,7 +23,7 @@ setuptools.setup(
     url="https://github.com/Hedgehogues/table-tests",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3.7+",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
