@@ -2,5 +2,8 @@
 __pycache__/
 data/
 bin/
+dist/
+build/
+table_test.egg-info/
 .ipynb_checkpoints/
 *.pyc
