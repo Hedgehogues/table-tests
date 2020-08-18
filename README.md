@@ -22,35 +22,4 @@ Such kind of tests intend of standartization and getting rid of verbosity. You c
 
     git clone https://github.com/Hedgehogues/table-tests
     pip install -r requirements
-
-# Our recommendations
-
-If you want to use our util, we recommend to use for single class for testing each function or method. You must inherit 
-from the base class and build your own class:
-
-    from utils import BaseTestClass, SubTest
-    from example.c import MyClass
-
-
-    class MyTest(BaseTestClass):
-    
-        def setUp(self):
-            self.tests = [
-                SubTest(
-                    name="Test 1",
-                    description="This is accepted test for MyClass.plus method",
-                    object=MyClass(5),
-                    args={'b': 1},
-                    want=6,
-                ),
-            ]
-    
-        def test(self):
-            for test in self.tests:
-                self.apply_test(test, lambda obj, kwargs: obj.plus(**kwargs))
- 
-* BaseTestClass - this is simple engine for process your tests.
-* SubTest - this is instance of your test
- 
-You're welcome! Enjoy it (=. 
  
